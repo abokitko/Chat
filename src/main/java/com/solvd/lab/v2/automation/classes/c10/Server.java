@@ -7,10 +7,10 @@ import com.solvd.lab.v2.automation.io.interfaces.Packable;
 import com.solvd.lab.v2.automation.util.SerializationUtil;
 import static java.nio.file.StandardWatchEventKinds.*;
 
+import java.io.File;
 import java.io.IOException;
 import java.nio.file.*;
-import java.util.Arrays;
-import java.util.List;
+import java.util.*;
 import java.util.logging.Logger;
 
 public class Server {
@@ -34,6 +34,14 @@ public class Server {
     }
 
     // TODO: filter msgs
+    private static String changeChar(String str){
+        char[] characters = str.toCharArray();
+        int rand = (int)(Math.random()*str.length());
+        characters[rand] = '*';
+        return new String(characters);
+    }
+
+    // TODO: filter msgs
     private static void listen() throws IOException, InterruptedException {
         WatchService watchService = FileSystems.getDefault().newWatchService();
         String watchingDir = System.getProperty("user.dir") + "/src/main/resources";
@@ -41,14 +49,28 @@ public class Server {
         WatchKey watchKey = dir.register(watchService, ENTRY_MODIFY, ENTRY_CREATE);
 
 
-
         watchKey = watchService.take();
+        ArrayList<String> offenses = new ArrayList<>();
+        try (Scanner sc = new Scanner(new File("src/main/resources/offenses.txt"))){
+            while (sc.hasNextLine()) {
+                String[] lines = sc.nextLine().split(",");
+                for(String line : lines){
+                    offenses.add(String.valueOf(line));
+                }
+
+            }
+        }
         for (WatchEvent<?> event : watchKey.pollEvents()) {
             if (String.valueOf(event.context()).equals("serial")) {
                 Packable obj = SerializationUtil.readObject();
                 ConnectMessage msg = ((ConnectMessage) obj);
+
                 if (msg.getHost().equals(HOST) && msg.getPort() == PORT) {
-                    LOGGER.info(String.format("Received message from %s: %s ", msg.getToken(), msg.getMessage()));
+                    String message = msg.getMessage();
+                    if (offenses.contains(message.toLowerCase())) {
+                        message = changeChar(message);
+                    }
+                    LOGGER.info(String.format("Received message from %s: %s ", msg.getToken(), message));
                     Packable resp = new ResponseMessage(HOST, PORT, TOKEN, "SUCCESS", 200);
                     sendResponse(resp);
                 }
