@@ -2,14 +2,15 @@ package com.solvd.lab.v2.automation.classes.c10;
 
 import com.solvd.lab.v2.automation.classes.c10.bo.ConnectMessage;
 import com.solvd.lab.v2.automation.classes.c10.bo.ResponseMessage;
-import com.solvd.lab.v2.automation.constant.TimeConstant;
 import com.solvd.lab.v2.automation.io.interfaces.Packable;
 import com.solvd.lab.v2.automation.util.SerializationUtil;
 import static java.nio.file.StandardWatchEventKinds.*;
+import com.vdurmont.emoji.*;
 
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.*;
+import java.sql.Connection;
 import java.util.*;
 import java.util.logging.Logger;
 
@@ -20,6 +21,7 @@ public class Server {
     private static final String HOST = "127.0.0.1";
     private static final int PORT = 8000;
     private static final String TOKEN = "user";
+
 
     public static void main(String[] args) {
         LOGGER.info(String.format("Listening on %s:%d", HOST, PORT));
@@ -40,7 +42,6 @@ public class Server {
         characters[rand] = '*';
         return new String(characters);
     }
-
     // TODO: filter msgs
     private static void listen() throws IOException, InterruptedException {
         WatchService watchService = FileSystems.getDefault().newWatchService();
@@ -67,6 +68,7 @@ public class Server {
 
                 if (msg.getHost().equals(HOST) && msg.getPort() == PORT) {
                     String message = msg.getMessage();
+                    message = EmojiParser.parseToUnicode(message);
                     if (offenses.contains(message.toLowerCase())) {
                         message = changeChar(message);
                     }
@@ -74,6 +76,7 @@ public class Server {
                     Packable resp = new ResponseMessage(HOST, PORT, TOKEN, "SUCCESS", 200);
                     sendResponse(resp);
                 }
+
             }
         }
     }
@@ -81,4 +84,6 @@ public class Server {
     private static void sendResponse(Packable pkg) {
         SerializationUtil.writeResponse(pkg);
     }
+
+
 }
