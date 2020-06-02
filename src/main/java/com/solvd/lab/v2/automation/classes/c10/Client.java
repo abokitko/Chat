@@ -1,51 +1,93 @@
 package com.solvd.lab.v2.automation.classes.c10;
 
-import com.solvd.lab.v2.automation.classes.c10.bo.ConnectMessage;
-import com.solvd.lab.v2.automation.classes.c10.bo.ResponseMessage;
 import com.solvd.lab.v2.automation.constant.C10Constant;
-import com.solvd.lab.v2.automation.io.interfaces.Packable;
 import com.solvd.lab.v2.automation.util.PropertyUtil;
-import com.solvd.lab.v2.automation.util.SerializationUtil;
+
+import java.io.*;
+import java.net.Socket;
+import java.net.UnknownHostException;
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
+import java.util.logging.Logger;
 
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Scanner;
-
-
-
-/**
- * 1. object streams
- * 2. task
- * 3. swap strings
- * 33. loggers (stdin, stdout, stderr)
- * 4. refactoring
- * 5. fixes
- */
-public class Client {
+public class Client implements Runnable {
+    private static Socket clientSocket = null;
+    private static PrintStream dataPrintStream = null;
+    private static DataInputStream dataInputStream = null;
+    private static BufferedReader message = null;
+    private static boolean leaved = false;
+    private static boolean test = false;
 
     public static void main(String[] args) {
         final String HOST = PropertyUtil.getValueByKey(C10Constant.HOSTNAME);
         final int PORT = Integer.parseInt(PropertyUtil.getValueByKey(C10Constant.PORT));
-        Scanner in = new Scanner(System.in);
-        System.out.print("Enter username: ");
-        final String userName = in.next();
-        connect(HOST, PORT, userName);
-        System.out.println(((ResponseMessage) getResponse()).getResp());
+
+        if (args[0] == "true") {
+            test = true;
+        }
+
+        try {
+            clientSocket = new Socket(HOST, PORT);
+            message = new BufferedReader(new InputStreamReader(System.in));
+            dataInputStream = new DataInputStream(clientSocket.getInputStream());
+            dataPrintStream = new PrintStream(clientSocket.getOutputStream());
+        } catch (UnknownHostException e) {
+            e.printStackTrace();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+        int currentLine = 0;
+        if (clientSocket != null && dataInputStream != null && dataPrintStream != null) {
+            try {
+                new Thread(new Client()).start();
+
+                while (!leaved) {
+                    if (test) {
+                        for (int i = 0; i < args.length; i++){
+                            if (i != 0) {
+                                dataPrintStream.println(args[i]);
+                                Thread.sleep(200);
+                            }
+                        }
+                    } else {
+                        if (currentLine == 0) {
+                            System.out.print("Enter username: ");
+                            currentLine++;
+                        } else {
+                            Thread.sleep(200);
+                            System.out.print("Enter message: ");
+                        }
+                        dataPrintStream.println(message.readLine().trim());
+                    }
+                }
+
+                clientSocket.close();
+                dataInputStream.close();
+                dataPrintStream.close();
+            } catch (IOException | InterruptedException e) {
+                e.printStackTrace();
+            }
+        }
+
     }
 
-    private static void connect(final String host, final int port, final String token) {
-        Scanner in = new Scanner(System.in);
-        System.out.print("Enter message: ");
-        String msg = in.nextLine();
-        Packable pkg = new ConnectMessage(host, port, token, msg);
-        SerializationUtil.writeObject(pkg);
+    @Override
+    public void run() {
+        DateTimeFormatter dtf = DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm:ss");
 
-        in.close();
+        String response;
+        try {
+            while ((response = dataInputStream.readLine()) != null){
+                LocalDateTime now = LocalDateTime.now();
+                System.out.println("[" + dtf.format(now) + "] " + response);
+                if (response.indexOf("Bye") != -1) {
+                    break;
+                }
+            }
+            leaved = true;
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
     }
-
-    private static Packable getResponse() {
-        return SerializationUtil.readResponse();
-    }
-
 }
