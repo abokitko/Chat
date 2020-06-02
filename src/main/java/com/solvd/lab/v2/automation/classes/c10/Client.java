@@ -6,7 +6,6 @@ import com.solvd.lab.v2.automation.constant.C10Constant;
 import com.solvd.lab.v2.automation.io.interfaces.Packable;
 import com.solvd.lab.v2.automation.util.PropertyUtil;
 import com.solvd.lab.v2.automation.util.SerializationUtil;
-import com.sun.tools.internal.ws.processor.model.Message;
 
 
 import java.util.ArrayList;
@@ -25,19 +24,6 @@ import java.util.Scanner;
  */
 public class Client {
 
-    public static ArrayList<Message> history;
-    public Client(){
-        this.history = new ArrayList<>();
-    }
-
-    public void addMessage(Message msg){
-        this.history.add(msg);
-    }
-
-    public List<Message>getHistory(){
-        return this.history;
-    }
-
     public static void main(String[] args) {
         final String HOST = PropertyUtil.getValueByKey(C10Constant.HOSTNAME);
         final int PORT = Integer.parseInt(PropertyUtil.getValueByKey(C10Constant.PORT));
@@ -51,7 +37,7 @@ public class Client {
     private static void connect(final String host, final int port, final String token) {
         Scanner in = new Scanner(System.in);
         System.out.print("Enter message: ");
-        String msg = in.next();
+        String msg = in.nextLine();
         Packable pkg = new ConnectMessage(host, port, token, msg);
         SerializationUtil.writeObject(pkg);
 
