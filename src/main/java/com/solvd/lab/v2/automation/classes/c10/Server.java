@@ -10,6 +10,7 @@ import com.vdurmont.emoji.EmojiParser;
 import static java.nio.file.StandardWatchEventKinds.*;
 
 import java.io.File;
+import java.io.FileReader;
 import java.io.IOException;
 import java.nio.file.*;
 import java.util.*;
@@ -22,10 +23,7 @@ public class Server {
     private static final String HOST = "127.0.0.1";
     private static final int PORT = 8000;
     private static final String TOKEN = "user";
-    //public static EmojiFilter emojiFilter;
-    public static Filter emojiFilter = new EmojiFilter();
-    public static Filter offensesFilter = new OffensesFilter();
-    public static Filter nameFilter = new NamesFilter();
+    private static final Filter filter = new Filter();
 
 
     public static void main(String[] args) {
@@ -51,36 +49,36 @@ public class Server {
 
 
         watchKey = watchService.take();
-        ArrayList<String> offenses = new ArrayList<>();
-        try (Scanner sc = new Scanner(new File("src/main/resources/offenses.txt"))){
-            while (sc.hasNextLine()) {
-                String[] lines = sc.nextLine().split(",");
-                for(String line : lines){
-                    offenses.add(String.valueOf(line));
-                }
+        /*ArrayList<String> offenses = new ArrayList<>();
+        try(FileReader reader = new FileReader("src/main/resources/offenses.txt"))
+        {
+            int c;
+            while((c=reader.read())!=-1){
 
             }
-        }
+        }catch (IOException e){
+
+        }*/
+
+
         ArrayList<String> names = new ArrayList<>();
-        try (Scanner name = new Scanner(new File("src/main/resources/names.txt"))){
-            while (name.hasNextLine()) {
-                String[] lines = name.nextLine().split(",");
-                for(String line : lines){
-                    names.add(String.valueOf(line));
-                }
+        /*try(FileReader reader = new FileReader("src/main/resources/names.txt"))
+        {
+            int c;
+            while((c=reader.read())!=-1){
 
+                //System.out.print((char)c);
             }
-        }
+        }*/
+
         ArrayList<String> countries = new ArrayList<>();
-        try (Scanner country = new Scanner(new File("src/main/resources/countries.txt"))){
-            while (country.hasNextLine()) {
-                String[] lines = country.nextLine().split(",");
-                for(String line : lines){
-                    countries.add(String.valueOf(line));
-                }
-
+        /*try(FileReader reader = new FileReader("src/main/resources/countries.txt"))
+        {
+            int c;
+            while((c=reader.read())!=-1){
             }
-        }
+        }*/
+
         for (WatchEvent<?> event : watchKey.pollEvents()) {
             if (String.valueOf(event.context()).equals("serial")) {
                 Packable obj = SerializationUtil.readObject();
@@ -88,17 +86,10 @@ public class Server {
 
                 if (msg.getHost().equals(HOST) && msg.getPort() == PORT) {
                     String message = msg.getMessage();
-                    message = emojiFilter.apply(message);
-                    //message = nameFilter.apply(message);
-                    if (offenses.contains(message.toLowerCase())) {
+                    message = filter.apply(message);
+                    /*if (offenses.contains(message.toLowerCase())) {
                         message = offensesFilter.apply(message);
-                    }
-                    if (names.contains(message.toLowerCase())) {
-                        message = nameFilter.apply(message);
-                    }
-                    if (countries.contains(message.toLowerCase())) {
-                        message = nameFilter.apply(message);
-                    }
+                    }*/
                     LOGGER.info(String.format("Received message from %s: %s ", msg.getToken(), message));
                     Packable resp = new ResponseMessage(HOST, PORT, TOKEN, "SUCCESS", 200);
                     sendResponse(resp);
