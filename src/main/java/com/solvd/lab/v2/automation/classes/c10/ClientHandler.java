@@ -1,11 +1,14 @@
 package com.solvd.lab.v2.automation.classes.c10;
 
+import com.solvd.lab.v2.automation.classes.c10.bo.MessageInfo;
 import com.solvd.lab.v2.automation.filter.Filter;
+import com.solvd.lab.v2.automation.util.XMLWriter;
+import org.xml.sax.SAXException;
 
-import java.io.DataInputStream;
-import java.io.IOException;
-import java.io.PrintStream;
+import javax.xml.parsers.ParserConfigurationException;
+import java.io.*;
 import java.net.Socket;
+import java.time.Instant;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.logging.Logger;
@@ -13,11 +16,12 @@ import java.util.logging.Logger;
 class ClientHandler extends Thread  {
     private static final Logger LOGGER = Logger.getLogger(Server.class.getSimpleName());
     private Socket clientSocket;
-    private PrintStream dataPrintStream;
+    private ObjectOutputStream dataPrintStream;
     private Filter filter = new Filter();
-    private DataInputStream dataInputStream;
+    private ObjectInputStream dataInputStream;
     private int maxClients;
     private final ClientHandler[] handlers;
+    private XMLWriter xmlWriter;
 
     public ClientHandler(Socket clientSocket, ClientHandler[] handlers) {
         this.clientSocket = clientSocket;
@@ -29,22 +33,38 @@ class ClientHandler extends Thread  {
     public void run() {
         ClientHandler[] handlers = this.handlers;
         DateTimeFormatter dtf = DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm:ss");
+
         try {
-            dataInputStream = new DataInputStream(clientSocket.getInputStream());
-            dataPrintStream = new PrintStream(clientSocket.getOutputStream());
-            String name = dataInputStream.readLine().trim();
+            xmlWriter = new XMLWriter();
+        } catch (ParserConfigurationException e) {
+            e.printStackTrace();
+        } catch (IOException e) {
+            e.printStackTrace();
+        } catch (SAXException e) {
+            e.printStackTrace();
+        }
+
+        try {
+            dataPrintStream = new ObjectOutputStream(clientSocket.getOutputStream());
+            dataInputStream = new ObjectInputStream(clientSocket.getInputStream());
+
+            MessageInfo receivedObject;
+
             while (true) {
-                String message = dataInputStream.readLine();
-                if (message.contains("leave")){
+                receivedObject = (MessageInfo) dataInputStream.readObject();
+
+                if (receivedObject.message.contains("leave")){
                     break;
                 }
-                message = filter.apply(message);
+
+                receivedObject.message = filter.apply(receivedObject.message);
 
                 for (int i = 0; i < maxClients; i++)
                     if (handlers[i] != null) {
-                        handlers[i].dataPrintStream.println(name + ": " + message);
+                        handlers[i].dataPrintStream.writeObject(receivedObject);
                         LocalDateTime now = LocalDateTime.now();
-                        LOGGER.info("[" + dtf.format(now) + "] " + name + ": " + message);
+                        xmlWriter.addNewMessage(receivedObject.hostName, receivedObject.port, Instant.now().getEpochSecond(), receivedObject.userName, receivedObject.message.trim());
+                        LOGGER.info("[" + dtf.format(now) + "] " + receivedObject.userName + ": " + receivedObject.message.trim());
                     }
 
             }
@@ -52,12 +72,14 @@ class ClientHandler extends Thread  {
             for (int i = 0; i < maxClients; i++)
                 if (handlers[i] != null && handlers[i] != this) {
                     LocalDateTime now = LocalDateTime.now();
-                    handlers[i].dataPrintStream.println("[" + dtf.format(now) + "]"  + " User " + name + " left the chat.");
+                    handlers[i].dataPrintStream.writeObject("[" + dtf.format(now) + "]"  + " User " + receivedObject.userName + " left the chat.");
                 }
 
             LocalDateTime now = LocalDateTime.now();
-            LOGGER.info("[" + dtf.format(now) + "] " + name + " left the chat.");
-            dataPrintStream.println("Bye, " + name);
+            LOGGER.info("[" + dtf.format(now) + "] " + receivedObject.userName + " left the chat.");
+            xmlWriter.addNewMessage(receivedObject.hostName, receivedObject.port, Instant.now().getEpochSecond(), receivedObject.userName, "left the chat");
+            receivedObject.message = "Bye, " + receivedObject.userName;
+            dataPrintStream.writeObject(receivedObject);
 
             for (int i = 0; i < maxClients; i++)
                 if (handlers[i] == this) {
@@ -67,7 +89,7 @@ class ClientHandler extends Thread  {
             clientSocket.close();
             dataInputStream.close();
             dataPrintStream.close();
-        } catch (IOException e) {
+        } catch (IOException | ClassNotFoundException e) {
             e.printStackTrace();
         }
     }
