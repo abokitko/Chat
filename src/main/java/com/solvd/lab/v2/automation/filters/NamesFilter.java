@@ -1,7 +1,5 @@
-package com.solvd.lab.v2.automation.filter;
+package com.solvd.lab.v2.automation.filters;
 
-import java.io.File;
-import java.io.FileNotFoundException;
 import java.io.FileReader;
 import java.io.IOException;
 import java.util.ArrayList;

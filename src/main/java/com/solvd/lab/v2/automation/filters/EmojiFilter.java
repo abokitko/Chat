@@ -1,4 +1,4 @@
-package com.solvd.lab.v2.automation.filter;
+package com.solvd.lab.v2.automation.filters;
 
 import com.vdurmont.emoji.EmojiParser;
 

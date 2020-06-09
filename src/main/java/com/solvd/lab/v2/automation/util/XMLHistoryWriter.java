@@ -1,5 +1,6 @@
 package com.solvd.lab.v2.automation.util;
 
+import com.solvd.lab.v2.automation.classes.MessageInfo;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.w3c.dom.Node;
@@ -17,16 +18,16 @@ import javax.xml.transform.stream.StreamResult;
 import java.io.FileOutputStream;
 import java.io.IOException;
 
-public class XMLWriter {
+public class XMLHistoryWriter {
     private String filePath = "src/main/resources/history.xml";
     private DocumentBuilder documentBuilder = DocumentBuilderFactory.newInstance().newDocumentBuilder();
     private Document document = documentBuilder.parse(filePath);
 
 
-    public XMLWriter() throws ParserConfigurationException, IOException, SAXException {
+    public XMLHistoryWriter() throws ParserConfigurationException, IOException, SAXException {
     }
 
-    public void addNewMessage(String host, int port, long date, String name, String message) {
+    public void addNewMessage(MessageInfo messageInfo) {
         Node root = document.getDocumentElement();
 
         Element newMessageObject = document.createElement("Message");
@@ -36,11 +37,11 @@ public class XMLWriter {
         Element hostElement = document.createElement("Host");
         Element portElement = document.createElement("Port");
 
-        messageElement.setTextContent(message);
-        nameElement.setTextContent(name);
-        dateElement.setTextContent(String.valueOf(date));
-        hostElement.setTextContent(host);
-        portElement.setTextContent(String.valueOf(port));
+        messageElement.setTextContent(messageInfo.message.trim());
+        nameElement.setTextContent(messageInfo.userName);
+        dateElement.setTextContent(messageInfo.date);
+        hostElement.setTextContent(messageInfo.hostName);
+        portElement.setTextContent(String.valueOf(messageInfo.port));
 
         newMessageObject.appendChild(dateElement);
         newMessageObject.appendChild(nameElement);

@@ -1,4 +1,4 @@
-package com.solvd.lab.v2.automation.filter;
+package com.solvd.lab.v2.automation.filters;
 
 import java.io.*;
 import java.util.ArrayList;
@@ -35,3 +35,4 @@ public class OffensesFilter implements MessageFilter{
         return new String(characters);
     }
 }
+

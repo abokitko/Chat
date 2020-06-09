@@ -1,7 +1,7 @@
-package com.solvd.lab.v2.automation.filter;
+package com.solvd.lab.v2.automation.filters;
 
 
-import com.solvd.lab.v2.automation.classes.c10.Server;
+import com.solvd.lab.v2.automation.Server;
 
 import java.util.logging.Logger;
 
