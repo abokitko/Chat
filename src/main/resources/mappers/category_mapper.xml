@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="category_mapper">
+    <select id="getById" resultMap="category_map">
+        SELECT
+        *
+        FROM category C LEFT JOIN item I ON C.c_id=I.i_category_id
+        WHERE C.c_id = #{id}
+    </select>
+    <select id="get" resultMap="category_map">
+        SELECT
+        *
+        FROM category C LEFT JOIN item I ON C.c_id=I.i_category_id
+    </select>
+    <delete id="deleteById">
+        DELETE FROM category WHERE c_id=#{id}
+    </delete>
+    <insert id="create">
+        INSERT INTO category(c_name) VALUES(#{name})
+    </insert>
+    <update id="update">
+        UPDATE category SET c_name=#{name} WHERE c_id=#{id}
+    </update>
+    <resultMap id="category_map" type="com.solvd.lab.automation.v2.mybatis.model.Category" autoMapping="false">
+        <id property="id" column="c_id"/>
+        <result property="name" column="c_name"/>
+        <collection property="items" ofType="com.solvd.lab.automation.v2.mybatis.model.Item">
+            <id property="id" column="i_id" />
+            <result property="name" column="i_name" />
+        </collection>
+    </resultMap>
+
+</mapper>

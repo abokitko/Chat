@@ -1,5 +1,6 @@
 package com.solvd.lab.v2.automation;
 
+import com.solvd.lab.v2.automation.classes.MySql;
 import com.solvd.lab.v2.automation.constant.C10Constant;
 import com.solvd.lab.v2.automation.filters.Filter;
 import com.solvd.lab.v2.automation.classes.MessageInfo;
@@ -17,6 +18,7 @@ import org.xml.sax.SAXException;
 import java.io.File;
 
 import java.io.IOException;
+import java.sql.SQLException;
 import java.text.Format;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
@@ -25,7 +27,9 @@ import java.util.List;
 
 public class Server {
 
-    public static void main(String[] args) throws InterruptedException, IOException, SAXException, ParserConfigurationException {
+    public static void main(String[] args) throws InterruptedException, IOException, SAXException, ParserConfigurationException, SQLException {
+        MySql mySql = new MySql();
+        mySql.createTable();
         listen();
     }
 
@@ -42,7 +46,7 @@ public class Server {
         return files;
     }
 
-    private static void listen() throws InterruptedException, ParserConfigurationException, SAXException, IOException {
+    private static void listen() throws InterruptedException, ParserConfigurationException, SAXException, IOException, SQLException {
         List<String> filesPrevious = listFilesForFolder(new File(C10Constant.MESSAGES_PATH));
         List<String> files = filesPrevious;
 
@@ -66,6 +70,7 @@ public class Server {
     }
 
     static class Connection extends Thread {
+        private MySql mysql = new MySql();
 
         private String path;
         private Filter filter = new Filter();
@@ -77,7 +82,7 @@ public class Server {
             return format.format(date);
         }
 
-        public Connection(String path) throws IOException, SAXException, ParserConfigurationException {
+        public Connection(String path) throws IOException, SAXException, ParserConfigurationException, SQLException {
             this.path = path;
         }
 
@@ -85,7 +90,7 @@ public class Server {
             MessageInfo msg = readMessage(this.path);
 
             msg.message = filter.apply(msg.message);
-            xmlHistoryWriter.addNewMessage(msg);
+            mysql.addNewMessage(msg);
 
             System.out.println("[" + convertTime(Long.valueOf(msg.date)) + "] " + msg.userName + ": " + msg.message);
         }
